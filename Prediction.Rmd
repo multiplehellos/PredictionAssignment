@@ -1,0 +1,62 @@
+---
+title: "Prediction Assignment"
+author: "Me"
+date: "2023-06-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries and data
+
+
+```{r}
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(rattle)
+library(randomForest)
+library(corrplot)
+
+train <- read.csv("pml-training.csv")
+test <- read.csv("pml-testing.csv")
+```
+
+## Analyse and clean data
+
+```{r}
+train <- train[,colSums(is.na(train)) == 0] 
+train <- train[,-c(1:7)] 
+
+nvz <- nearZeroVar(train)
+train <- train[,-nvz]
+
+inTrain <- createDataPartition(y=train$classe, p=0.7, list=F)
+train <- train[inTrain,]
+valid <- train[-inTrain,]
+
+control <- trainControl(method="cv", number=3, verboseIter=F)
+```
+
+## Predicting via Random Forest
+
+```{r}
+mod_rf <- train(classe~., data=train, method="rf", trControl = control, ntree=10)
+
+pred_rf <- predict(mod_rf, valid)
+cm_rf <- confusionMatrix(pred_rf, factor(valid$classe))
+cm_rf
+
+plot(mod_rf)
+```
+
+
+## Predicting using the test data
+
+```{r}
+pred_test <- predict(mod_rf, test)
+pred_test
+```
+
